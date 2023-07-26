@@ -1,0 +1,77 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
+
+#define BUFSIZE 1024
+
+/**
+ * execute_command - Execute the command given by the user
+ * @command: The command to execute
+ *
+ * Return: void
+ */
+void execute_command(char *command)
+{
+	pid_t pid;
+	int status;
+
+	pid = fork();
+
+	if (pid == -1)
+	{
+		perror("fork");
+		exit(EXIT_FAILURE);
+	}
+	else if (pid == 0)
+	{
+		// Child process
+		if (execve(command, NULL, environ) == -1)
+		{
+			perror("execve");
+			exit(EXIT_FAILURE);
+		}
+	}
+	else
+	{
+		// Parent process
+		if (wait(&status) == -1)
+		{
+			perror("wait");
+			exit(EXIT_FAILURE);
+		}
+	}
+}
+
+/**
+ * main - Entry point for the simple shell
+ *
+ * Return: Always 0
+ */
+int main(void)
+{
+	char *prompt = "$ ";
+	char input[BUFSIZE];
+
+	while (1)
+	{
+		printf("%s", prompt);
+
+		if (fgets(input, BUFSIZE, stdin) == NULL)
+		{
+			printf("\n");
+			break;
+		}
+
+		// Remove the newline character from the input
+		size_t len = strlen(input);
+		if (len > 0 && input[len - 1] == '\n')
+			input[len - 1] = '\0';
+
+		execute_command(input);
+	}
+
+	return (EXIT_SUCCESS);
+}
+
